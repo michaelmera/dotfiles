@@ -1,1 +1,25 @@
-bats tests/test.xdg.bats
+#!/usr/bin/env bash
+
+if [ -z "${BASH_VERSION-}" ]; then
+    printf '%s\n' 'dotfiles: interpreter is not bash' >&2
+    exit 1
+fi
+
+if [[ $# -lt 1 ]]; then
+    printf '%s\n' 'USAGE: dotfiles [install|doctor]'
+    exit 0
+fi
+
+case $1 in
+    install)
+        exit 0
+        ;;
+    doctor)
+        bats tests/test.xdg.bats
+        exit 0
+        ;;
+    *)
+        printf '%s\n' 'dotfiles: unknown command ${1}' >&2
+        exit 1
+        ;;
+esac

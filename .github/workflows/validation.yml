@@ -1,0 +1,60 @@
+name: dotfiles validation
+
+on: [push, pull_request]
+
+jobs:
+    validate:
+        runs-on: ${{matrix.os}}
+        strategy:
+            matrix:
+                os: [ubuntu-20.04, ubuntu-22.04, ubuntu-latest, macos-11, macos-12, macos-13, macOS-latest]
+        
+        steps:
+            - name: checkout dotfiles repository
+              uses: actions/checkout@v4
+              with:
+                submodules: true
+
+            - name: install dotfiles
+              run: ./scripts/dotfiles install
+
+            - name: install dotfiles-doctor dependencies (bats)
+              shell: bash
+              run: |
+                # code from https://github.com/bats-core/bats-action with fix for macos
+
+                VERSION=1.10.0
+                DESTDIR="$HOME/.local/bin"
+                LIBDIR="$HOME/.local/share/bats"
+                TEMPDIR="/tmp/bats"
+                URL="https://github.com/bats-core/bats-core/"
+        
+                mkdir -p "${TEMPDIR}"
+                mkdir -p "${DESTDIR}"
+                mkdir -p "${LIBDIR}"
+        
+                curl -sL ${URL}/archive/refs/tags/v${VERSION}.tar.gz | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
+
+                # Archlinux style, except that we are not in a fakeroot env
+                # https://gitlab.archlinux.org/archlinux/packaging/packages/bash-bats/-/blob/main/PKGBUILD
+                sed -i.bak 's|BATS_ROOT/libexec/bats-core/bats|BATS_ROOT/share/bats/bats|g' bin/bats && rm -f /bin/bats/*.bak
+                sed -i.bak 's|BATS_ROOT/lib/bats-core/|BATS_ROOT/share/bats/|g' libexec/bats-core/* && rm -f libexec/bats-core/*.bak
+                sed -i.bak 's|BATS_ROOT/lib/bats-core/|BATS_ROOT/share/bats/|g' lib/bats-core/* && rm -f libs/bats-core/*.bak
+        
+                for fn in libexec/bats-core/*; do
+                  install -m755 ${fn} ${LIBDIR}/$(basename ${fn})
+                done
+
+                for fn in lib/bats-core/*; do
+                  install -m755 ${fn} ${LIBDIR}/$(basename ${fn})
+                done
+        
+                install -m755 bin/bats "${DESTDIR}/bats"
+        
+                echo "Bats v$VERSION installed in $DESTDIR"
+                echo "$DESTDIR" >> "$GITHUB_PATH"
+                echo "bats-installed=true" >> $GITHUB_OUTPUT
+                rm -rf ${TEMPDIR} || exit 0
+
+            - name: run dotfiles-doctor
+              run: ./scripts/dotfiles doctor
