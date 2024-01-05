@@ -12,8 +12,21 @@ fi
 
 case $1 in
     shell)
-        podman build -t dotfiles-dev-ubuntu -f ./tests/platforms/ubuntu.dockerfile .
-        podman run --rm -it dotfiles-dev-ubuntu bash
+        uid=$(id -u)
+        gid=$(id -g)
+        u_name=$(id -n -u)
+        g_name=$(id -n -g)
+
+        podman build \
+          --build-arg=DOCKER_USER_UID=${uid}      \
+          --build-arg=DOCKER_USER_GID=${gid}      \
+          --build-arg=DOCKER_USER_NAME=${u_name}  \
+          --build-arg=DOCKER_USER_GROUP=${g_name} \
+          -t dotfiles-dev-ubuntu                  \
+          -f ./tests/platforms/ubuntu.dockerfile  \
+          ${PWD}
+
+        podman run --rm --user ${uid}:${gid} --userns=keep-id:uid=${uid},gid=${gid} -v "${PWD}:/home/${u_name}/dotfiles:z" -it dotfiles-dev-ubuntu bash
         exit 0
         ;;
     *)
