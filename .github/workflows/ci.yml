@@ -1,0 +1,16 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+    validation:
+        uses: ./.github/workflows/check.yml
+        with:
+          runner: ${{ matrix.os }}
+
+        strategy:
+            matrix:
+                os: [ubuntu-20.04, ubuntu-22.04, ubuntu-latest, macos-11, macos-12, macos-13, macOS-latest]

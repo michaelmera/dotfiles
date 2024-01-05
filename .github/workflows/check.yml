@@ -1,13 +1,15 @@
-name: dotfiles validation
+name: check
 
-on: [push, pull_request]
+on:
+  workflow_call:
+    inputs:
+        runner:
+            required: true
+            type: string
 
 jobs:
-    validate:
-        runs-on: ${{matrix.os}}
-        strategy:
-            matrix:
-                os: [ubuntu-20.04, ubuntu-22.04, ubuntu-latest, macos-11, macos-12, macos-13, macOS-latest]
+    check:
+        runs-on: ${{ inputs.runner }}
         
         steps:
             - name: checkout dotfiles repository
