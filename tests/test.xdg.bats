@@ -3,9 +3,9 @@
 setup() {
     DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
 
-    load "${DIR}/bats-support/load"
-    load "${DIR}/bats-assert/load"
-    load "${DIR}/utils/load"
+    load "${DIR}/bats-support/load.bash"
+    load "${DIR}/bats-assert/load.bash"
+    load "${DIR}/utils/load.bash"
 }
 
 @test "XDG_CONFIG_HOME is set and non-null" {
