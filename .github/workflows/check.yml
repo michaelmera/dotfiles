@@ -18,7 +18,7 @@ jobs:
                 submodules: true
 
             - name: install dotfiles
-              run: ./scripts/dotfiles install
+              run: ./bin/dotfiles install
 
             - name: install dotfiles-doctor dependencies (bats)
               shell: bash
@@ -59,4 +59,4 @@ jobs:
                 rm -rf ${TEMPDIR} || exit 0
 
             - name: run dotfiles-doctor
-              run: ./scripts/dotfiles doctor
+              run: ./bin/dotfiles doctor
