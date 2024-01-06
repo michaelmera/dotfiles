@@ -10,24 +10,83 @@ if [[ $# -lt 1 ]]; then
     exit 0
 fi
 
+run_cmd_shell() {
+    local base="ubuntu"
+    local tag="latest"
+
+    while [[ $# -gt 0 ]];
+    do
+        case $1 in
+            -p|--platform)
+                if [ $# -lt 2 ] || [[ "$2" == -* ]]; then
+                    printf '%s\n' "dotfiles-dev: missing mandatory value for option '$1'" >&2
+                    exit 1
+                fi
+
+                shift
+                base=$1
+                ;;
+            --platform=*)
+                base=${1#--platform=}
+                ;;
+            -t|--tag)
+                if [ $# -lt 2 ] || [[ "$2" == -* ]]; then
+                    printf '%s\n' "dotfiles-dev: missing mandatory value for option '$1'" >&2
+                    exit 1
+                fi
+
+                shift
+                tag=$1
+                ;;
+            --tag=*)
+                tag=${1#--tag=}
+                ;;
+            -*)
+                printf '%s\n' "dotfiles-dev: unknown option '$1'" >&2
+                exit 1
+                ;;
+            *)
+                printf '%s\n' "dotfiles-dev: unknown argument '$1'" >&2
+                exit 1
+                ;;
+        esac
+
+        shift
+    done
+
+    local uid=$(id -u)
+    local gid=$(id -g)
+    local u_name=$(id -n -u)
+    local g_name=$(id -n -g)
+
+    podman build \
+        --build-arg=DOCKER_USER_UID=${uid}      \
+        --build-arg=DOCKER_USER_GID=${gid}      \
+        --build-arg=DOCKER_USER_NAME=${u_name}  \
+        --build-arg=DOCKER_USER_GROUP=${g_name} \
+        --build-arg=BASE_IMAGE_VERSION=${tag}   \
+        -t dotfiles-dev-${base}-${tag}          \
+        -f ./tests/platforms/${base}.dockerfile \
+        ${PWD}
+
+    if [ $? -ne 0 ] ; then
+        exit 1
+    fi
+
+    podman run \
+        --rm \
+        --user ${uid}:${gid} \
+        --userns=keep-id:uid=${uid},gid=${gid} \
+        -v "${PWD}:/home/${u_name}/dotfiles:z" \
+        -it dotfiles-dev-${base}-${tag}
+
+    exit 0
+}
+
 case $1 in
     shell)
-        uid=$(id -u)
-        gid=$(id -g)
-        u_name=$(id -n -u)
-        g_name=$(id -n -g)
-
-        podman build \
-          --build-arg=DOCKER_USER_UID=${uid}      \
-          --build-arg=DOCKER_USER_GID=${gid}      \
-          --build-arg=DOCKER_USER_NAME=${u_name}  \
-          --build-arg=DOCKER_USER_GROUP=${g_name} \
-          -t dotfiles-dev-ubuntu                  \
-          -f ./tests/platforms/ubuntu.dockerfile  \
-          ${PWD}
-
-        podman run --rm --user ${uid}:${gid} --userns=keep-id:uid=${uid},gid=${gid} -v "${PWD}:/home/${u_name}/dotfiles:z" -it dotfiles-dev-ubuntu bash
-        exit 0
+        shift
+        run_cmd_shell "$@"
         ;;
     *)
         printf '%s\n' 'dotfiles-dev: unknown command ${1}' >&2

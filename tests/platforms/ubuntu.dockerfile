@@ -1,4 +1,8 @@
-FROM ubuntu:22.04
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE_VERSION=latest
+
+FROM ubuntu:${BASE_IMAGE_VERSION}
 
 ARG DOCKER_USER_UID=1000
 ARG DOCKER_USER_GID=1000
@@ -14,8 +18,21 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends bats && \
     apt-get purge -y
 
-RUN groupadd --gid ${DOCKER_USER_GID} ${DOCKER_USER_GROUP}
-RUN useradd -m -s /bin/bash --uid ${DOCKER_USER_UID} --gid ${DOCKER_USER_GID} ${DOCKER_USER_NAME}
+RUN <<-"EOF"
+  group=$(getent group ${DOCKER_USER_GID} 2>/dev/null | cut -d: -f1)
+  if [ -n "${group}" ]; then
+    groupmod --new-name ${DOCKER_USER_GROUP} ${group}
+  else
+    groupadd -o --gid ${DOCKER_USER_GID} ${DOCKER_USER_GROUP}
+  fi
+
+  user=$(getent passwd ${DOCKER_USER_UID} 2>/dev/null | cut -d: -f1)
+  if [ -n "${user}" ]; then
+    usermod -o -d /home/${DOCKER_USER_NAME}  -s /bin/bash -u ${DOCKER_USER_UID} -l ${DOCKER_USER_NAME} ${user} 
+  else
+    useradd -m -s /bin/bash -u ${DOCKER_USER_UID} -g ${DOCKER_USER_GID} ${DOCKER_USER_NAME}
+  fi
+EOF
 
 USER ${DOCKER_USER_NAME}
 
