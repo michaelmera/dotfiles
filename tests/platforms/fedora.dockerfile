@@ -24,7 +24,7 @@ RUN <<-"EOF"
 
   user=$(getent passwd ${DOCKER_USER_UID} 2>/dev/null | cut -d: -f1)
   if [ -n "${user}" ]; then
-    usermod -o -d /home/${DOCKER_USER_NAME}  -s /bin/bash -u ${DOCKER_USER_UID} -l ${DOCKER_USER_NAME} ${user} 
+    usermod -o -d /home/${DOCKER_USER_NAME}  -s /bin/bash -u ${DOCKER_USER_UID} -l ${DOCKER_USER_NAME} ${user}
   else
     useradd -m -s /bin/bash -u ${DOCKER_USER_UID} -g ${DOCKER_USER_GID} ${DOCKER_USER_NAME}
   fi

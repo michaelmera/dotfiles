@@ -10,7 +10,7 @@ on:
 jobs:
     check:
         runs-on: ${{ inputs.runner }}
-        
+
         steps:
             - name: checkout dotfiles repository
               uses: actions/checkout@v4
@@ -30,11 +30,11 @@ jobs:
                 LIBDIR="$HOME/.local/share/bats"
                 TEMPDIR="/tmp/bats"
                 URL="https://github.com/bats-core/bats-core/"
-        
+
                 mkdir -p "${TEMPDIR}"
                 mkdir -p "${DESTDIR}"
                 mkdir -p "${LIBDIR}"
-        
+
                 curl -sL ${URL}/archive/refs/tags/v${VERSION}.tar.gz | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
 
                 # Archlinux style, except that we are not in a fakeroot env
@@ -42,7 +42,7 @@ jobs:
                 sed -i.bak 's|BATS_ROOT/libexec/bats-core/bats|BATS_ROOT/share/bats/bats|g' bin/bats && rm -f /bin/bats/*.bak
                 sed -i.bak 's|BATS_ROOT/lib/bats-core/|BATS_ROOT/share/bats/|g' libexec/bats-core/* && rm -f libexec/bats-core/*.bak
                 sed -i.bak 's|BATS_ROOT/lib/bats-core/|BATS_ROOT/share/bats/|g' lib/bats-core/* && rm -f libs/bats-core/*.bak
-        
+
                 for fn in libexec/bats-core/*; do
                   install -m755 ${fn} ${LIBDIR}/$(basename ${fn})
                 done
@@ -50,9 +50,9 @@ jobs:
                 for fn in lib/bats-core/*; do
                   install -m755 ${fn} ${LIBDIR}/$(basename ${fn})
                 done
-        
+
                 install -m755 bin/bats "${DESTDIR}/bats"
-        
+
                 echo "Bats v$VERSION installed in $DESTDIR"
                 echo "$DESTDIR" >> "$GITHUB_PATH"
                 echo "bats-installed=true" >> $GITHUB_OUTPUT
