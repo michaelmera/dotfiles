@@ -62,8 +62,39 @@ case $1 in
         exit 0
         ;;
     doctor)
-        bats tests/test.xdg.bats
-        exit 0
+        read_tap_results() {
+            while IFS=$'\n' read -r line
+            do
+                if echo "${line}" | grep -q "^ok" ; then
+                    read -r nb name <<< "${line#ok}"
+                    echo "ok|${name}"
+                    continue
+                fi
+
+                if echo "${line}" | grep -q "^not ok" ; then
+                    read -r nb name <<< "${line#not ok}"
+                    echo "ko|${name}"
+                    continue
+                fi
+            done
+        }
+
+        NB_SUCCESS=0
+        NB_FAILURE=0
+
+        while IFS='|' read -r status name
+        do
+            echo ${status} ${name}
+
+            if [ "${status}" = "ok" ]; then
+                (( NB_SUCCESS += 1 ))
+            else
+                (( NB_FAILURE += 1 ))
+            fi
+        done < <(bats tests/test.xdg.bats -F tap | read_tap_results)
+
+        (( ${NB_FAILURE} == 0 ))
+        exit
         ;;
     *)
         printf '%s\n' 'dotfiles: unknown command ${1}' >&2
