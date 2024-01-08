@@ -10,8 +10,55 @@ if [[ $# -lt 1 ]]; then
     exit 0
 fi
 
+relpath() {
+    local base=$1
+    local path=$2
+
+    if command -v realpath &> /dev/null && [ -n "$(realpath --help | grep 'relative-to')" ]; then
+        realpath --relative-to="${base}" "${path}"
+        return
+    fi
+
+    if command -v python &> /dev/null ; then
+        python -c "import os.path, sys; print(os.path.relpath(*sys.argv[1:]))" "$base" "$path"
+        return
+    fi
+
+    if command -v perl &> /dev/null ; then
+        perl -le 'use File::Spec; print File::Spec->abs2rel(@ARGV)' "$path" "$base"
+        return
+    fi
+
+    printf '%s\n' 'dotfiles: could not execute relpath' >&2
+    exit 1
+}
+
+install_dotfile() {
+    local src=$1
+    local dst=$2
+
+    if [ -e "${dst}" ]; then
+        rm "${dst}"
+    fi
+
+    ln -s $(relpath "$(dirname "${dst}")" "${src}") "${dst}"
+}
+
 case $1 in
     install)
+        export XDG_CONFIG_HOME="${HOME}/.config"
+        mkdir -p "${XDG_CONFIG_HOME}" && chmod go-rwx "${XDG_CONFIG_HOME}"
+
+        if [ -e "${XDG_CONFIG_HOME}/dotfiles" ]; then
+            rm -rf "${XDG_CONFIG_HOME}/dotfiles"
+        fi
+
+        cp -rL . "${XDG_CONFIG_HOME}/dotfiles"
+
+        rm -f "${HOME}/.bash_profile" "${HOME}/.bash_login" "${HOME}/.bashrc" "${HOME}/.bash_logout"
+
+        install_dotfile "${XDG_CONFIG_HOME}/dotfiles/modules/shell/profile" "${HOME}/.profile"
+
         exit 0
         ;;
     doctor)

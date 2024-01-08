@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# NOTE: sourced by all posix shells
+#
+#   This file contains common configuration for posix shells, thus everything
+#   written here must be posix-compliant and shell-specific configurations into
+#   their respective shell's module.
+
+case $(locale -a | grep "^C") in
+    *C.UTF8) LOCALE=C.UTF8 ;;
+    *C.utf8) LOCALE=C.utf8 ;;
+    *C.UTF-8) LOCALE=C.UTF-8 ;;
+    *) LOCALE=C ;;
+esac
+export LANG=${LOCALE}
+export LC_ALL=${LOCALE}
+unset LOCALE
+
+if [ -z "${XDG_CONFIG_HOME:-}" ]; then
+    export XDG_CONFIG_HOME=${HOME}/.config
+fi

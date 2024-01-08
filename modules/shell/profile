@@ -1,0 +1,4 @@
+#!/bin/sh -
+# ~/.profile
+
+. "${XDG_CONFIG_HOME:-${HOME}/.config}/dotfiles/modules/shell/env"

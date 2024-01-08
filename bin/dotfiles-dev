@@ -33,7 +33,7 @@ launch_container() {
         --build-arg=BASE_IMAGE_VERSION=${tag}   \
         -t dotfiles-dev-${img}-${tag}          \
         -f ./tests/platforms/${img}.dockerfile \
-        ${PWD}
+        ${PWD} > /dev/null
 
     if [ $? -ne 0 ] ; then
         exit 1
@@ -79,12 +79,12 @@ run_cmd_test() {
         shift
     done
 
-    IFS=':' read -r base tag <<< "${platform}"
+    IFS=':' read -r img tag <<< "${platform}"
     if [ -z "${tag-}" ]; then
         local tag=latest
     fi
 
-    launch_container "${base}" "${tag}" ./bin/dotfiles doctor
+    launch_container "${img}" "${tag}" sh -c "./bin/dotfiles install ; bash --login -c './bin/dotfiles doctor'"
     exit
 }
 
@@ -119,12 +119,12 @@ run_cmd_shell() {
         shift
     done
 
-    IFS=':' read -r base tag <<< "${platform}"
+    IFS=':' read -r img tag <<< "${platform}"
     if [ -z "${tag-}" ]; then
         local tag=latest
     fi
 
-    launch_container "${base}" "${tag}" bash
+    launch_container "${img}" "${tag}" bash
     exit
 }
 
